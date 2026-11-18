@@ -1,0 +1,10 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.gitignore
+smartserve.db
+smartserve.db-shm
+smartserve.db-wal

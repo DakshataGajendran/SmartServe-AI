@@ -1,6 +1,6 @@
 venv/
+.venv/
 __pycache__/
-*.pyc
-data/raw/*.csv
-.env
-*.db
+.pytest_cache/
+smartserve.db*
+SmartServe-AI/

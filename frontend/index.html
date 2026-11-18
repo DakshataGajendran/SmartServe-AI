@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartServe AI — Enterprise IT Incident Triage</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade { animation: fadeIn 0.22s ease-out forwards; }
+    .glass {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+  </style>
+</head>
+<body class="bg-[#060913] text-slate-100 min-h-screen font-sans antialiased">
+
+  <!-- Ambient Backdrop -->
+  <div class="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+    <div class="absolute -top-36 left-1/4 w-[480px] h-[480px] rounded-full bg-indigo-600/15 blur-[130px]"></div>
+    <div class="absolute bottom-0 right-1/4 w-[420px] h-[420px] rounded-full bg-cyan-500/10 blur-[120px]"></div>
+  </div>
+
+  <!-- ==================== 1. UNIFIED LOGIN & LOAD SIMULATION GATEWAY ==================== -->
+  <div id="auth-screen" class="min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch animate-fade">
+
+      <!-- Left 3 Cols: Login Card -->
+      <div class="lg:col-span-3 glass rounded-3xl p-8 space-y-6 shadow-2xl">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+              S
+            </div>
+            <div>
+              <h1 class="text-lg font-bold text-white">SmartServe AI</h1>
+              <p class="text-xs text-slate-400">Intelligent IT Incident Triage Portal</p>
+            </div>
+          </div>
+          <span id="login-api-status" class="px-3 py-1 rounded-full text-[11px] bg-slate-900 text-slate-400 border border-slate-800">Checking...</span>
+        </div>
+
+        <!-- Role Selector Tabs -->
+        <div class="grid grid-cols-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+          <button id="login-tab-emp" onclick="setLoginRole('employee')"
+            class="py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow transition">
+            Employee Sign In
+          </button>
+          <button id="login-tab-admin" onclick="setLoginRole('admin')"
+            class="py-2 rounded-lg font-semibold text-slate-400 hover:text-white transition">
+            IT Admin Sign In
+          </button>
+        </div>
+
+        <form onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+          <div>
+            <label id="login-user-label" class="text-slate-300 font-medium block mb-1.5">Employee ID</label>
+            <input id="login-username" type="text" required value="EMP-4082"
+              class="w-full rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 px-4 py-3 text-sm text-white font-mono outline-none"
+              placeholder="EMP-4082 (or EMP-4001 to EMP-4200)" />
+          </div>
+
+          <div>
+            <label class="text-slate-300 font-medium block mb-1.5">Password</label>
+            <input id="login-password" type="password" required value="emp123"
+              class="w-full rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 px-4 py-3 text-sm text-white outline-none"
+              placeholder="••••••••" />
+          </div>
+
+          <p id="login-error" class="text-xs text-rose-400 min-h-[16px]"></p>
+
+          <button type="submit"
+            class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 transition">
+            Sign In to Workspace →
+          </button>
+        </form>
+
+        <div class="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3.5 text-[11px] text-slate-400 space-y-1">
+          <p><strong class="text-slate-200">Employee Demo:</strong> Any ID <span class="font-mono text-indigo-300">EMP-4001</span> to <span class="font-mono text-indigo-300">EMP-4200</span> • Password: <span class="font-mono text-indigo-300">emp123</span></p>
+          <p><strong class="text-slate-200">Admin Demo:</strong> Username: <span class="font-mono text-cyan-300">admin</span> • Password: <span class="font-mono text-cyan-300">admin123</span></p>
+        </div>
+      </div>
+
+      <!-- Right 2 Cols: 100+ Concurrent Employee Load Simulator -->
+      <div class="lg:col-span-2 glass rounded-3xl p-7 flex flex-col justify-between border-indigo-500/20 space-y-5">
+        <div class="space-y-3">
+          <span class="px-2.5 py-1 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[10px] uppercase tracking-wider font-semibold">
+            200-Employee Workforce Stress Test
+          </span>
+          <h2 class="text-base font-bold text-white">Concurrent Employee Ticket Simulation</h2>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Simulate 100+ employees (<span class="font-mono text-slate-300">EMP-4001..EMP-4200</span>) submitting distinct support tickets simultaneously to test ML classification, urgency escalation, and department routing.
+          </p>
+
+          <div class="pt-1">
+            <label class="text-[11px] text-slate-400 block mb-1">Concurrent Employees Submitting</label>
+            <select id="sim-count" class="w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-xs text-white outline-none">
+              <option value="100">100 Employees Simultaneous</option>
+              <option value="150">150 Employees Simultaneous</option>
+              <option value="200">200 Employees (Full Workforce Burst)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="sim-result-box" class="hidden bg-slate-950/90 border border-emerald-500/30 rounded-2xl p-4 text-xs space-y-1.5 animate-fade">
+          <p class="text-emerald-400 font-semibold">✓ Stress Benchmark Passed (0 Crashes)</p>
+          <p id="sim-stats-text" class="text-slate-300"></p>
+          <p id="sim-sample-ids" class="text-[11px] text-indigo-300 font-mono"></p>
+        </div>
+
+        <button id="sim-run-btn" onclick="runConcurrentSimulation()"
+          class="w-full py-3 rounded-xl bg-slate-900 hover:bg-indigo-600/25 border border-indigo-500/40 text-xs font-semibold text-indigo-200 transition">
+          ⚡ Simulate 100+ Employees Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. AUTHENTICATED WORKSPACE (EMPLOYEE OR ADMIN) ==================== -->
+  <div id="app-shell" class="hidden min-h-screen flex">
+
+    <!-- Left Navigation Sidebar -->
+    <aside class="w-64 shrink-0 glass border-y-0 border-l-0 flex flex-col justify-between min-h-screen sticky top-0 z-30">
+      <div class="p-5 space-y-6">
+        <div class="flex items-center gap-3 px-1">
+          <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+            S
+          </div>
+          <div>
+            <h1 class="text-sm font-bold tracking-tight text-white">SmartServe AI</h1>
+            <p id="sidebar-role-label" class="text-[11px] text-indigo-400 font-medium">Employee Portal</p>
+          </div>
+        </div>
+
+        <!-- EMPLOYEE SIDEBAR -->
+        <nav id="nav-user" class="hidden space-y-1.5 text-xs">
+          <button onclick="navigate('user-dashboard')" data-page="user-dashboard"
+            class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition">
+            <span>⊞</span><span>Dashboard</span>
+          </button>
+          <button onclick="navigate('user-raise')" data-page="user-raise"
+            class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition">
+            <span>＋</span><span>Raise Ticket</span>
+          </button>
+          <button onclick="navigate('user-tickets')" data-page="user-tickets"
+            class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition">
+            <span class="flex items-center gap-3"><span>🎫</span><span>My Tickets</span></span>
+            <span id="badge-user-open" class="px-2 py-0.5 rounded-full text-[10px] bg-indigo-500/20 text-indigo-300">0</span>
+          </button>
+        </nav>
+
+        <!-- ADMIN SIDEBAR -->
+        <nav id="nav-admin" class="hidden space-y-1.5 text-xs">
+          <button onclick="navigate('admin-dashboard')" data-page="admin-dashboard"
+            class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition">
+            <span>⊞</span><span>Dashboard</span>
+          </button>
+          <button onclick="navigate('admin-analytics')" data-page="admin-analytics"
+            class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition">
+            <span>📊</span><span>Analytics</span>
+          </button>
+          <button onclick="navigate('admin-tickets')" data-page="admin-tickets"
+            class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium transition">
+            <span class="flex items-center gap-3"><span>🎫</span><span>Tickets</span></span>
+            <span id="badge-admin-review" class="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300">0</span>
+          </button>
+          <button onclick="navigate('admin-teams')" data-page="admin-teams"
+            class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition">
+            <span>👥</span><span>Team Queues</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Bottom Logged-In User Profile & Sign Out -->
+      <div class="p-4 border-t border-slate-800/80 space-y-3">
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex items-center gap-2.5">
+          <div id="profile-avatar" class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">AM</div>
+          <div class="overflow-hidden">
+            <p id="profile-name" class="text-xs font-semibold text-white truncate">Arjun Mehta</p>
+            <p id="profile-sub" class="text-[10px] text-slate-400 truncate">EMP-4082</p>
+          </div>
+        </div>
+
+        <button onclick="logout()"
+          class="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-rose-950/50 hover:border-rose-500/40 border border-slate-800 text-xs font-medium text-slate-300 hover:text-rose-200 transition flex items-center justify-center gap-2">
+          <span>⎋</span><span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="glass border-x-0 border-t-0 px-8 py-4 flex items-center justify-between">
+        <div>
+          <h2 id="page-title" class="text-base font-semibold text-white">Dashboard</h2>
+          <p id="page-subtitle" class="text-xs text-slate-400">Workspace overview</p>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span id="api-status" class="px-3 py-1.5 rounded-full bg-emerald-950/70 text-emerald-300 border border-emerald-800/80">● v1.0-logreg</span>
+          <a href="/docs" target="_blank" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">API Docs ↗</a>
+        </div>
+      </header>
+
+      <main class="p-8 max-w-7xl w-full mx-auto space-y-6">
+
+        <!-- ==================== EMPLOYEE VIEW 1: PERSONAL DASHBOARD ==================== -->
+        <section id="page-user-dashboard" class="page-section hidden space-y-6 animate-fade">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="glass rounded-2xl p-5">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Total Tickets Raised</p>
+              <p id="u-stat-total" class="text-2xl font-bold text-white mt-1.5">0</p>
+            </div>
+            <div class="glass rounded-2xl p-5">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Not Solved (Active in Queue)</p>
+              <p id="u-stat-notsolved" class="text-2xl font-bold text-amber-400 mt-1.5">0</p>
+            </div>
+            <div class="glass rounded-2xl p-5">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Solved by Department</p>
+              <p id="u-stat-solved" class="text-2xl font-bold text-emerald-400 mt-1.5">0</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="glass rounded-2xl p-6 space-y-3 text-xs">
+              <h3 class="text-sm font-semibold text-white">My Employee Profile</h3>
+              <div class="flex justify-between py-1.5 border-b border-slate-800/70"><span class="text-slate-400">Employee ID</span><span id="u-card-id" class="font-mono text-indigo-300 font-semibold">—</span></div>
+              <div class="flex justify-between py-1.5 border-b border-slate-800/70"><span class="text-slate-400">Full Name</span><span id="u-card-name">—</span></div>
+              <div class="flex justify-between py-1.5 border-b border-slate-800/70"><span class="text-slate-400">Corporate Email</span><span id="u-card-email">—</span></div>
+              <div class="flex justify-between py-1.5"><span class="text-slate-400">Department</span><span id="u-card-dept">—</span></div>
+            </div>
+
+            <div class="lg:col-span-2 glass rounded-2xl p-6 flex flex-col justify-between">
+              <div>
+                <h3 class="text-sm font-semibold text-white">Need IT Support?</h3>
+                <p class="text-xs text-slate-400 mt-1">Raise a new support ticket—SmartServe AI classifies your issue and routes it directly to the responsible IT department to be solved.</p>
+              </div>
+              <div class="mt-6 flex gap-3">
+                <button onclick="navigate('user-raise')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition">
+                  ＋ Raise New Ticket
+                </button>
+                <button onclick="navigate('user-tickets')" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-200 transition">
+                  View My Tickets →
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== EMPLOYEE VIEW 2: RAISE TICKET ==================== -->
+        <section id="page-user-raise" class="page-section hidden max-w-3xl space-y-6 animate-fade">
+          <div class="glass rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-base font-semibold text-white">Raise a Support Ticket</h3>
+                <p class="text-xs text-slate-400">Logged in as <span id="raise-as-label" class="text-indigo-300 font-semibold">—</span></p>
+              </div>
+              <button type="button" onclick="toggleVoiceInput()" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-300">
+                🎙️ Voice Dictate
+              </button>
+            </div>
+
+            <textarea id="user-ticket-input" rows="5"
+              class="w-full rounded-xl bg-slate-950/90 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 p-4 text-sm text-slate-100 placeholder-slate-500 outline-none"
+              placeholder="Describe your technical issue clearly (e.g., My office VPN is not connecting and I have a meeting in 10 minutes)..."></textarea>
+
+            <div class="flex items-center justify-between">
+              <span id="user-error" class="text-xs text-rose-400"></span>
+              <button id="user-submit-btn" onclick="submitUserTicket()"
+                class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-lg shadow-indigo-600/25 transition">
+                Submit &amp; Route Ticket →
+              </button>
+            </div>
+          </div>
+
+          <div id="user-routing-receipt" class="hidden glass rounded-2xl p-5 border-emerald-500/30 text-xs space-y-2 animate-fade">
+            <p class="text-emerald-400 font-semibold">✓ Ticket Submitted &amp; Routed</p>
+            <p id="receipt-summary" class="text-slate-300"></p>
+          </div>
+        </section>
+
+        <!-- ==================== EMPLOYEE VIEW 3: MY TICKETS (NO PRIORITY OR ACTION COLUMNS) ==================== -->
+        <section id="page-user-tickets" class="page-section hidden space-y-4 animate-fade">
+          <div class="glass rounded-2xl p-6 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                <button id="u-tab-opened" onclick="setTableFilter('user', 'opened')" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold">Not Solved</button>
+                <button id="u-tab-closed" onclick="setTableFilter('user', 'closed')" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white">Solved</button>
+              </div>
+              <input id="u-search" type="text" oninput="renderTables()" placeholder="Search my tickets..."
+                class="rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2 text-xs text-white outline-none focus:border-indigo-500 w-64" />
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
+                    <th class="py-3 px-3">Ticket ID</th>
+                    <th class="py-3 px-3">Issue Description</th>
+                    <th class="py-3 px-3">Category</th>
+                    <th class="py-3 px-3">Routed Department</th>
+                    <th class="py-3 px-3">Resolution Status</th>
+                  </tr>
+                </thead>
+                <tbody id="user-tbody" class="divide-y divide-slate-800/60"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== ADMIN VIEW 1: DASHBOARD ==================== -->
+        <section id="page-admin-dashboard" class="page-section hidden space-y-6 animate-fade">
+          <div class="glass rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4 border-indigo-500/25">
+            <div>
+              <h3 class="text-sm font-semibold text-white">100+ Concurrent Employee Load Simulator</h3>
+              <p class="text-xs text-slate-400">Dispatch 120 unique employee tickets simultaneously through the ML + Rule engine.</p>
+            </div>
+            <button id="admin-sim-btn" onclick="runAdminStressTest()"
+              class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-lg shadow-indigo-600/25 transition">
+              ⚡ Simulate 120 Employees Submitting Now
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass rounded-2xl p-5">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Total Tickets</p>
+              <p id="kpi-total" class="text-2xl font-bold text-white mt-1.5">0</p>
+            </div>
+            <div class="glass rounded-2xl p-5">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Avg Confidence</p>
+              <p id="kpi-conf" class="text-2xl font-bold text-indigo-400 mt-1.5">0.0%</p>
+            </div>
+            <div class="glass rounded-2xl p-5">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Pending Human Review</p>
+              <p id="kpi-review" class="text-2xl font-bold text-amber-400 mt-1.5">0.0%</p>
+            </div>
+            <div class="glass rounded-2xl p-5">
+              <p class="text-[11px] uppercase tracking-wider text-slate-400">Avg Latency</p>
+              <p id="kpi-latency" class="text-2xl font-bold text-emerald-400 mt-1.5">0.00 ms</p>
+            </div>
+          </div>
+
+          <div id="drift-banner" class="glass rounded-2xl px-5 py-3.5 text-xs text-slate-300 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span id="drift-dot" class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+              <span id="drift-text">Checking drift telemetry...</span>
+            </div>
+            <button onclick="navigate('admin-analytics')" class="text-indigo-400 hover:text-indigo-300 font-medium">Open Visual Analytics →</button>
+          </div>
+
+          <div class="glass rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-white">Action Required: Pending Human Review</h3>
+              <button onclick="navigate('admin-tickets')" class="text-xs text-indigo-400 hover:text-indigo-300">Open Full Ticket Queue →</button>
+            </div>
+            <div id="admin-review-preview" class="space-y-2.5 text-xs"></div>
+          </div>
+        </section>
+
+        <!-- ==================== ADMIN VIEW 2: ANALYTICS & EMPLOYEE LOOKUP ==================== -->
+        <section id="page-admin-analytics" class="page-section hidden space-y-6 animate-fade">
+          <div class="glass rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4 border-indigo-500/25">
+            <div>
+              <h3 class="text-sm font-semibold text-white">Employee Analytics &amp; Ticket Lookup</h3>
+              <p class="text-xs text-slate-400">Search any Employee ID (e.g., <span class="font-mono text-indigo-300">EMP-4082</span>) or Name to inspect all their tickets and filter charts.</p>
+            </div>
+            <div class="flex items-center gap-2.5 w-full sm:w-auto">
+              <input id="analytics-emp-search" type="text" oninput="renderAnalytics()"
+                placeholder="Search Employee ID or Name..."
+                class="rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 px-4 py-2 text-xs text-white outline-none w-full sm:w-72" />
+              <button onclick="clearEmployeeAnalyticsSearch()"
+                class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-300">
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div id="employee-spotlight" class="hidden glass rounded-2xl p-6 border-cyan-500/30 space-y-5 animate-fade">
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div class="flex items-center gap-3.5">
+                <div id="spot-avatar" class="h-11 w-11 rounded-xl bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white text-sm">AM</div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 id="spot-name" class="text-base font-bold text-white">—</h4>
+                    <span id="spot-id" class="px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 font-mono text-xs">—</span>
+                  </div>
+                  <p id="spot-email" class="text-xs text-slate-400">—</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-4 gap-4 text-center text-xs">
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5">
+                  <p class="text-slate-400 text-[10px] uppercase">Total Raised</p>
+                  <p id="spot-total" class="text-base font-bold text-white mt-0.5">0</p>
+                </div>
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5">
+                  <p class="text-slate-400 text-[10px] uppercase">Open / Active</p>
+                  <p id="spot-open" class="text-base font-bold text-indigo-400 mt-0.5">0</p>
+                </div>
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5">
+                  <p class="text-slate-400 text-[10px] uppercase">Avg Confidence</p>
+                  <p id="spot-conf" class="text-base font-bold text-cyan-400 mt-0.5">0%</p>
+                </div>
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5">
+                  <p class="text-slate-400 text-[10px] uppercase">Top Department</p>
+                  <p id="spot-dept" class="text-xs font-semibold text-emerald-300 mt-1 truncate max-w-[130px]">—</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
+                    <th class="py-2.5 px-3">Ticket ID</th>
+                    <th class="py-2.5 px-3">Issue Description</th>
+                    <th class="py-2.5 px-3">Category</th>
+                    <th class="py-2.5 px-3">Routed Department</th>
+                    <th class="py-2.5 px-3">Confidence</th>
+                    <th class="py-2.5 px-3">Priority</th>
+                    <th class="py-2.5 px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="spot-tbody" class="divide-y divide-slate-800/60"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="glass rounded-2xl p-6">
+              <h4 class="text-sm font-semibold text-white mb-1">Ticket Volume by AI Category</h4>
+              <p class="text-xs text-slate-400 mb-4">Classification counts across incident classes</p>
+              <div class="h-64"><canvas id="chart-categories"></canvas></div>
+            </div>
+            <div class="glass rounded-2xl p-6">
+              <h4 class="text-sm font-semibold text-white mb-1">Department Routing Breakdown</h4>
+              <p class="text-xs text-slate-400 mb-4">Share of tickets dispatched to each support queue</p>
+              <div class="h-64"><canvas id="chart-teams"></canvas></div>
+            </div>
+            <div class="glass rounded-2xl p-6">
+              <h4 class="text-sm font-semibold text-white mb-1">Incident Severity &amp; Priority</h4>
+              <p class="text-xs text-slate-400 mb-4">Rule-based urgency breakdown</p>
+              <div class="h-64"><canvas id="chart-priorities"></canvas></div>
+            </div>
+            <div class="glass rounded-2xl p-6">
+              <h4 class="text-sm font-semibold text-white mb-1">Auto-Accepted vs. Human Review Gate</h4>
+              <p class="text-xs text-slate-400 mb-4">Triage workflow states across all processed tickets</p>
+              <div class="h-64"><canvas id="chart-status"></canvas></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== ADMIN VIEW 3: ALL TICKETS TABLE WITH MULTI-CRITERIA SORTING ==================== -->
+        <section id="page-admin-tickets" class="page-section hidden space-y-4 animate-fade">
+          <div class="glass rounded-2xl p-6 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <!-- Status Tabs -->
+              <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                <button id="a-tab-opened" onclick="setTableFilter('admin', 'opened')" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold">Opened</button>
+                <button id="a-tab-closed" onclick="setTableFilter('admin', 'closed')" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white">Closed (Solved)</button>
+              </div>
+
+              <!-- Connected Search, Department Filter & Multi-Sort Controls -->
+              <div class="flex flex-wrap items-center gap-2.5">
+                <input id="a-search" type="text" oninput="renderTables()" placeholder="Search EMP ID, user, issue..."
+                  class="rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2 text-xs text-white outline-none focus:border-indigo-500 w-52" />
+
+                <select id="a-dept-filter" onchange="renderTables()"
+                  class="rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                  <option value="ALL">All Departments</option>
+                  <option value="Desktop / Hardware Support">Desktop / Hardware Support</option>
+                  <option value="IT Support / Identity">IT Support / Identity</option>
+                  <option value="Infrastructure / Storage Team">Infrastructure / Storage Team</option>
+                  <option value="HR Operations Desk">HR Operations Desk</option>
+                  <option value="IT Procurement & Assets">IT Procurement &amp; Assets</option>
+                  <option value="Internal Systems / PMO">Internal Systems / PMO</option>
+                  <option value="General Service Desk">General Service Desk</option>
+                </select>
+
+                <select id="a-sort-by" onchange="renderTables()"
+                  class="rounded-xl bg-indigo-950/60 border border-indigo-500/40 px-3 py-2 text-xs text-indigo-200 font-medium outline-none focus:border-indigo-400">
+                  <option value="recent">Sort: Recently Raised</option>
+                  <option value="priority">Sort: Priority (Critical → Low)</option>
+                  <option value="review">Sort: Human Review Needed First</option>
+                  <option value="department">Sort: Department (A → Z)</option>
+                  <option value="oldest">Sort: Oldest Raised</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
+                    <th class="py-3 px-3">Ticket ID</th>
+                    <th class="py-3 px-3">Employee</th>
+                    <th class="py-3 px-3">Issue</th>
+                    <th class="py-3 px-3">Category &amp; Conf</th>
+                    <th class="py-3 px-3">Routed Team</th>
+                    <th class="py-3 px-3">Status</th>
+                    <th class="py-3 px-3">Priority</th>
+                    <th class="py-3 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-tbody" class="divide-y divide-slate-800/60"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== ADMIN VIEW 4: TEAM QUEUES ==================== -->
+        <section id="page-admin-teams" class="page-section hidden space-y-6 animate-fade">
+          <div id="teams-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Ticket Inspection Modal -->
+  <div id="inspect-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeInspectModal()">
+    <div class="glass max-w-lg w-full rounded-2xl p-6 space-y-4 animate-fade" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="modal-title" class="text-sm font-bold text-white">Ticket Details</h3>
+        <button onclick="closeInspectModal()" class="text-slate-400 hover:text-white text-xs">✕</button>
+      </div>
+      <div id="modal-body" class="text-xs space-y-2.5 text-slate-300"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed bottom-5 right-5 z-50 glass px-4 py-2.5 rounded-xl text-xs text-white shadow-2xl"></div>
+
+  <script>
+    let loginRole = "employee";
+    let sessionUser = null;
+    let sessionRole = null;
+    let allTickets = [];
+    let metricsData = {};
+    let userTab = "opened";
+    let adminTab = "opened";
+    let charts = {};
+
+    const PRIORITY_WEIGHT = {
+      Critical: 1,
+      High: 2,
+      Medium: 3,
+      Low: 4
+    };
+
+    const PAGE_META = {
+      "user-dashboard": ["Employee Dashboard", "Your personal IT support overview and resolution status"],
+      "user-raise": ["Raise Ticket", "Submit a new IT support incident for automated department routing"],
+      "user-tickets": ["My Tickets", "Track whether your raised tickets are Solved or Not Solved by the routed department"],
+      "admin-dashboard": ["IT Admin Dashboard", "System-wide telemetry, load benchmarking & human review queue"],
+      "admin-analytics": ["Visual Analytics & Employee Lookup", "Interactive charts and per-employee ticket inspection"],
+      "admin-tickets": ["All Tickets", "Sort, filter, approve human-review tickets, or mark issues solved"],
+      "admin-teams": ["Team Queues", "Live ticket load across all routed IT support departments"]
+    };
+
+    const ALL_DEPARTMENTS = [
+      "Desktop / Hardware Support",
+      "IT Support / Identity",
+      "Infrastructure / Storage Team",
+      "HR Operations Desk",
+      "IT Procurement & Assets",
+      "Internal Systems / PMO",
+      "General Service Desk"
+    ];
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.classList.remove("hidden");
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => t.classList.add("hidden"), 3000);
+    }
+
+    function setLoginRole(role) {
+      loginRole = role;
+      const isEmp = role === "employee";
+      document.getElementById("login-tab-emp").className = isEmp
+        ? "py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow transition"
+        : "py-2 rounded-lg font-semibold text-slate-400 hover:text-white transition";
+      document.getElementById("login-tab-admin").className = !isEmp
+        ? "py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow transition"
+        : "py-2 rounded-lg font-semibold text-slate-400 hover:text-white transition";
+
+      document.getElementById("login-user-label").textContent = isEmp ? "Employee ID" : "Admin Username";
+      document.getElementById("login-username").value = isEmp ? "EMP-4082" : "admin";
+      document.getElementById("login-password").value = isEmp ? "emp123" : "admin123";
+      document.getElementById("login-error").textContent = "";
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById("login-username").value;
+      const password = document.getElementById("login-password").value;
+      const errEl = document.getElementById("login-error");
+      errEl.textContent = "";
+
+      try {
+        const res = await fetch("/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: loginRole, username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.detail || "Authentication failed.";
+          return;
+        }
+
+        sessionRole = data.role;
+        sessionUser = data.user;
+
+        document.getElementById("auth-screen").classList.add("hidden");
+        document.getElementById("app-shell").classList.remove("hidden");
+
+        const isUser = sessionRole === "employee";
+        document.getElementById("nav-user").classList.toggle("hidden", !isUser);
+        document.getElementById("nav-admin").classList.toggle("hidden", isUser);
+        document.getElementById("sidebar-role-label").textContent = isUser ? "Employee Workspace" : "IT Admin Console";
+
+        const initials = sessionUser.user_name.split(" ").map(n => n[0]).join("").slice(0, 2);
+        document.getElementById("profile-avatar").textContent = initials;
+        document.getElementById("profile-name").textContent = sessionUser.user_name;
+        document.getElementById("profile-sub").textContent = `${sessionUser.employee_id} • ${sessionUser.department}`;
+
+        if (isUser) {
+          document.getElementById("u-card-id").textContent = sessionUser.employee_id;
+          document.getElementById("u-card-name").textContent = sessionUser.user_name;
+          document.getElementById("u-card-email").textContent = sessionUser.user_email;
+          document.getElementById("u-card-dept").textContent = sessionUser.department;
+          document.getElementById("raise-as-label").textContent = `${sessionUser.user_name} (${sessionUser.employee_id})`;
+          navigate("user-dashboard");
+        } else {
+          navigate("admin-dashboard");
+        }
+
+        await refreshAll();
+      } catch {
+        errEl.textContent = "Server connection error.";
+      }
+    }
+
+    function logout() {
+      sessionUser = null;
+      sessionRole = null;
+      allTickets = [];
+      document.getElementById("app-shell").classList.add("hidden");
+      document.getElementById("auth-screen").classList.remove("hidden");
+    }
+
+    async function runConcurrentSimulation() {
+      const count = parseInt(document.getElementById("sim-count").value, 10);
+      const btn = document.getElementById("sim-run-btn");
+      btn.disabled = true;
+      btn.textContent = `Simulating ${count} Employees...`;
+      try {
+        const res = await fetch("/simulate/employees", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ employee_count: count })
+        });
+        const data = await res.json();
+        const box = document.getElementById("sim-result-box");
+        box.classList.remove("hidden");
+        document.getElementById("sim-stats-text").textContent =
+          `Processed ${data.tickets_processed} unique tickets in ${data.total_time_ms} ms (${data.throughput_tickets_per_sec} tickets/sec). Auto-Routed: ${data.auto_accepted_routed} | Human Review: ${data.pending_human_review}.`;
+        document.getElementById("sim-sample-ids").textContent =
+          `Try logging in as: ${data.sample_employee_ids.join(", ")}`;
+        showToast(`${count} unique employee tickets processed!`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Simulate 100+ Employees Now";
+      }
+    }
+
+    async function runAdminStressTest() {
+      const btn = document.getElementById("admin-sim-btn");
+      btn.disabled = true;
+      btn.textContent = "Simulating 120 Employees...";
+      try {
+        const res = await fetch("/simulate/employees", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ employee_count: 120 })
+        });
+        const data = await res.json();
+        showToast(`120 unique tickets processed in ${data.total_time_ms} ms (${data.throughput_tickets_per_sec}/s)!`);
+        await refreshAll();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Simulate 120 Employees Submitting Now";
+      }
+    }
+
+    function navigate(pageId) {
+      document.querySelectorAll(".page-section").forEach(el => el.classList.add("hidden"));
+      const target = document.getElementById(`page-${pageId}`);
+      if (target) target.classList.remove("hidden");
+
+      const [title, sub] = PAGE_META[pageId] || ["SmartServe AI", ""];
+      document.getElementById("page-title").textContent = title;
+      document.getElementById("page-subtitle").textContent = sub;
+
+      document.querySelectorAll(".nav-item").forEach(btn => {
+        const active = btn.dataset.page === pageId;
+        btn.className = active
+          ? "nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 transition"
+          : "nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-slate-400 hover:text-white hover:bg-slate-900/80 transition";
+      });
+
+      if (pageId === "admin-analytics") renderAnalytics();
+    }
+
+    function setTableFilter(role, tab) {
+      if (role === "user") {
+        userTab = tab;
+        document.getElementById("u-tab-opened").className = tab === "opened"
+          ? "px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold"
+          : "px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white";
+        document.getElementById("u-tab-closed").className = tab === "closed"
+          ? "px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold"
+          : "px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white";
+      } else {
+        adminTab = tab;
+        document.getElementById("a-tab-opened").className = tab === "opened"
+          ? "px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold"
+          : "px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white";
+        document.getElementById("a-tab-closed").className = tab === "closed"
+          ? "px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold"
+          : "px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white";
+      }
+      renderTables();
+    }
+
+    function toggleVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showToast("Voice dictation supported in Chrome / Edge.");
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      showToast("Listening... speak your IT issue.");
+      recognition.onresult = (e) => {
+        document.getElementById("user-ticket-input").value = e.results[0][0].transcript;
+      };
+      recognition.start();
+    }
+
+    async function checkHealth() {
+      try {
+        const res = await fetch("/health");
+        const data = await res.json();
+        document.getElementById("login-api-status").textContent = `● ${data.model_version}`;
+        document.getElementById("login-api-status").className = "px-3 py-1 rounded-full text-[11px] bg-emerald-950/70 text-emerald-300 border border-emerald-800/80";
+      } catch {
+        document.getElementById("login-api-status").textContent = "● Offline";
+      }
+    }
+
+    async function submitUserTicket() {
+      const input = document.getElementById("user-ticket-input");
+      const errEl = document.getElementById("user-error");
+      const btn = document.getElementById("user-submit-btn");
+      errEl.textContent = "";
+
+      if (!input.value.trim()) {
+        errEl.textContent = "Please describe your issue first.";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Submitting...";
+      try {
+        const res = await fetch("/tickets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ticket_text: input.value,
+            employee_id: sessionUser.employee_id,
+            user_name: sessionUser.user_name,
+            user_email: sessionUser.user_email
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = Array.isArray(data.detail) ? data.detail[0].msg : data.detail;
+          return;
+        }
+        input.value = "";
+        const receipt = document.getElementById("user-routing-receipt");
+        receipt.classList.remove("hidden");
+        document.getElementById("receipt-summary").textContent =
+          `Ticket #T${1000 + data.ticket_id} classified under "${data.category}" → Routed to ${data.suggested_team}. Status: Not Solved (${data.status}).`;
+        showToast(`Ticket #T${1000 + data.ticket_id} routed to ${data.suggested_team}`);
+        await refreshAll();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Submit & Route Ticket →";
+      }
+    }
+
+    async function approveTicket(id) {
+      await fetch(`/tickets/${id}/approve`, { method: "PATCH" });
+      showToast(`Ticket #T${1000 + id} Accepted & Routed.`);
+      await refreshAll();
+    }
+
+    async function closeTicketAction(id) {
+      await fetch(`/tickets/${id}/close`, { method: "PATCH" });
+      showToast(`Ticket #T${1000 + id} marked as Solved.`);
+      await refreshAll();
+    }
+
+    async function deleteTicketAction(id) {
+      await fetch(`/tickets/${id}`, { method: "DELETE" });
+      showToast(`Ticket #T${1000 + id} deleted.`);
+      await refreshAll();
+    }
+
+    function inspectTicket(id) {
+      const t = allTickets.find(item => item.ticket_id === id);
+      if (!t) return;
+      document.getElementById("modal-title").textContent = `Ticket #T${1000 + t.ticket_id} • ${t.category}`;
+      document.getElementById("modal-body").innerHTML = `
+        <p><span class="text-slate-400">Employee:</span> <span class="font-mono text-indigo-300">${t.employee_id}</span> • ${t.user_name} (${t.user_email})</p>
+        <p><span class="text-slate-400">Issue:</span> ${t.ticket_text}</p>
+        <p><span class="text-slate-400">Routed Department:</span> <span class="text-cyan-300 font-semibold">${t.suggested_team}</span></p>
+        <p><span class="text-slate-400">Confidence Signal:</span> ${(t.confidence * 100).toFixed(1)}% (${t.confidence_band})</p>
+        <p><span class="text-slate-400">Priority:</span> ${t.priority} (${t.priority_reason})</p>
+        <p><span class="text-slate-400">Review Policy:</span> ${t.review_reason}</p>
+        <p><span class="text-slate-400">Status:</span> ${t.status === "Closed" ? "Solved by " + t.suggested_team : t.status}</p>
+      `;
+      document.getElementById("inspect-modal").classList.remove("hidden");
+    }
+
+    function closeInspectModal() {
+      document.getElementById("inspect-modal").classList.add("hidden");
+    }
+
+    function priorityBadge(p) {
+      const map = {
+        Critical: "bg-rose-950/90 text-rose-300 border-rose-700/70",
+        High: "bg-amber-950/90 text-amber-300 border-amber-700/70",
+        Medium: "bg-sky-950/90 text-sky-300 border-sky-700/70",
+        Low: "bg-emerald-950/90 text-emerald-300 border-emerald-700/70"
+      };
+      return `<span class="px-2.5 py-0.5 rounded-md border text-[11px] font-medium ${map[p] || 'bg-slate-800 text-slate-300'}">${p}</span>`;
+    }
+
+    function adminStatusBadge(s) {
+      if (s === "Closed") return `<span class="px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-[11px]">Solved (Closed)</span>`;
+      if (s === "Pending Human Review") return `<span class="px-2.5 py-0.5 rounded-full bg-amber-950/80 text-amber-300 border border-amber-700/60 text-[11px]">Pending Human Review</span>`;
+      return `<span class="px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 text-[11px]">Accepted &amp; Routed</span>`;
+    }
+
+    function userResolutionBadge(t) {
+      if (t.status === "Closed") {
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 text-[11px] font-medium">✓ Solved by ${t.suggested_team}</span>`;
+      }
+      if (t.status === "Pending Human Review") {
+        return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-700/60 text-[11px] font-medium">⏳ Not Solved — Pending Human Review</span>`;
+      }
+      return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-950/80 text-sky-300 border border-sky-700/60 text-[11px] font-medium">● Not Solved — Assigned to ${t.suggested_team}</span>`;
+    }
+
+    function clearEmployeeAnalyticsSearch() {
+      document.getElementById("analytics-emp-search").value = "";
+      renderAnalytics();
+    }
+
+    function renderChart(canvasId, type, labels, data, colors) {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      if (charts[canvasId]) charts[canvasId].destroy();
+      charts[canvasId] = new Chart(ctx, {
+        type,
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderColor: "rgba(15, 23, 42, 0.9)",
+            borderWidth: type === "bar" ? 0 : 2,
+            borderRadius: type === "bar" ? 6 : 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: canvasId === "chart-status" ? "y" : "x",
+          plugins: {
+            legend: {
+              display: type === "doughnut" || type === "polarArea",
+              position: "right",
+              labels: { color: "#cbd5e1", font: { size: 11 } }
+            }
+          },
+          scales: (type === "bar") ? {
+            x: { ticks: { color: "#94a3b8", font: { size: 10 } }, grid: { color: "rgba(148,163,184,0.08)" } },
+            y: { beginAtZero: true, ticks: { color: "#94a3b8", stepSize: 1, font: { size: 10 } }, grid: { color: "rgba(148,163,184,0.08)" } }
+          } : {}
+        }
+      });
+    }
+
+    function renderAnalytics() {
+      const q = (document.getElementById("analytics-emp-search")?.value || "").trim().toLowerCase();
+      const spotlight = document.getElementById("employee-spotlight");
+
+      let dataset = allTickets;
+      if (q) {
+        dataset = allTickets.filter(t =>
+          (t.employee_id || "").toLowerCase().includes(q) ||
+          (t.user_name || "").toLowerCase().includes(q)
+        );
+        spotlight.classList.remove("hidden");
+
+        if (dataset.length > 0) {
+          const sample = dataset[0];
+          const openCnt = dataset.filter(t => t.status !== "Closed").length;
+          const avgConf = (dataset.reduce((acc, t) => acc + t.confidence, 0) / dataset.length) * 100;
+          const deptMap = {};
+          dataset.forEach(t => deptMap[t.suggested_team] = (deptMap[t.suggested_team] || 0) + 1);
+          const topDept = Object.entries(deptMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+
+          document.getElementById("spot-avatar").textContent = sample.user_name.split(" ").map(n => n[0]).join("").slice(0, 2);
+          document.getElementById("spot-name").textContent = sample.user_name;
+          document.getElementById("spot-id").textContent = sample.employee_id;
+          document.getElementById("spot-email").textContent = sample.user_email;
+          document.getElementById("spot-total").textContent = dataset.length;
+          document.getElementById("spot-open").textContent = openCnt;
+          document.getElementById("spot-conf").textContent = `${avgConf.toFixed(1)}%`;
+          document.getElementById("spot-dept").textContent = topDept;
+
+          document.getElementById("spot-tbody").innerHTML = dataset.map(t => `
+            <tr class="hover:bg-slate-900/50">
+              <td class="py-2.5 px-3 font-mono text-indigo-400 font-semibold">#T${1000 + t.ticket_id}</td>
+              <td class="py-2.5 px-3 max-w-xs truncate text-slate-200">${t.ticket_text}</td>
+              <td class="py-2.5 px-3 text-slate-300">${t.category}</td>
+              <td class="py-2.5 px-3 text-cyan-300 font-medium">${t.suggested_team}</td>
+              <td class="py-2.5 px-3 text-indigo-300">${(t.confidence * 100).toFixed(1)}%</td>
+              <td class="py-2.5 px-3">${priorityBadge(t.priority)}</td>
+              <td class="py-2.5 px-3">${adminStatusBadge(t.status)}</td>
+            </tr>
+          `).join("");
+        } else {
+          document.getElementById("spot-name").textContent = `No records for "${q}"`;
+          document.getElementById("spot-id").textContent = "NOT FOUND";
+          document.getElementById("spot-email").textContent = "Try searching EMP-4082 or EMP-4001..EMP-4200";
+          document.getElementById("spot-total").textContent = "0";
+          document.getElementById("spot-open").textContent = "0";
+          document.getElementById("spot-conf").textContent = "0%";
+          document.getElementById("spot-dept").textContent = "—";
+          document.getElementById("spot-tbody").innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-500">No matching employee tickets found.</td></tr>`;
+        }
+      } else {
+        spotlight.classList.add("hidden");
+      }
+
+      const catCounts = {};
+      const teamCounts = {};
+      const prioCounts = { Critical: 0, High: 0, Medium: 0, Low: 0 };
+      const statusCounts = { "Accepted & Routed": 0, "Pending Human Review": 0, "Solved (Closed)": 0 };
+
+      dataset.forEach(t => {
+        catCounts[t.category] = (catCounts[t.category] || 0) + 1;
+        teamCounts[t.suggested_team] = (teamCounts[t.suggested_team] || 0) + 1;
+        if (prioCounts[t.priority] !== undefined) prioCounts[t.priority]++;
+
+        if (t.status === "Closed") statusCounts["Solved (Closed)"]++;
+        else if (t.status === "Pending Human Review") statusCounts["Pending Human Review"]++;
+        else statusCounts["Accepted & Routed"]++;
+      });
+
+      const palette = ["#6366f1", "#06b6d4", "#8b5cf6", "#10b981", "#f59e0b", "#ec4899", "#3b82f6", "#14b8a6"];
+      renderChart("chart-categories", "bar", Object.keys(catCounts), Object.values(catCounts), palette);
+      renderChart("chart-teams", "doughnut", Object.keys(teamCounts), Object.values(teamCounts), palette);
+      renderChart("chart-priorities", "polarArea", Object.keys(prioCounts), Object.values(prioCounts), ["#f43f5e", "#f59e0b", "#38bdf8", "#10b981"]);
+      renderChart("chart-status", "bar", Object.keys(statusCounts), Object.values(statusCounts), ["#10b981", "#f59e0b", "#64748b"]);
+    }
+
+    function renderTables() {
+      if (sessionRole === "employee") {
+        const uQuery = (document.getElementById("u-search")?.value || "").toLowerCase();
+        const userFiltered = allTickets.filter(t => {
+          const matchesTab = userTab === "closed" ? t.status === "Closed" : t.status !== "Closed";
+          const matchesSearch = t.ticket_text.toLowerCase().includes(uQuery) ||
+            String(t.ticket_id).includes(uQuery) ||
+            t.suggested_team.toLowerCase().includes(uQuery) ||
+            t.category.toLowerCase().includes(uQuery);
+          return matchesTab && matchesSearch;
+        });
+
+        document.getElementById("user-tbody").innerHTML = userFiltered.length === 0
+          ? `<tr><td colspan="5" class="py-6 text-center text-slate-500">No tickets found in this view.</td></tr>`
+          : userFiltered.map(t => `
+            <tr class="hover:bg-slate-900/50 transition">
+              <td class="py-3.5 px-3 font-mono text-indigo-400 font-semibold">#T${1000 + t.ticket_id}</td>
+              <td class="py-3.5 px-3 max-w-md text-slate-200">${t.ticket_text}</td>
+              <td class="py-3.5 px-3 text-slate-300">${t.category}</td>
+              <td class="py-3.5 px-3 text-indigo-300 font-medium">${t.suggested_team}</td>
+              <td class="py-3.5 px-3">${userResolutionBadge(t)}</td>
+            </tr>
+          `).join("");
+      } else {
+        const aQuery = (document.getElementById("a-search")?.value || "").toLowerCase();
+        const aDept = document.getElementById("a-dept-filter")?.value || "ALL";
+        const aSort = document.getElementById("a-sort-by")?.value || "recent";
+
+        const adminFiltered = allTickets.filter(t => {
+          const matchesTab = adminTab === "closed" ? t.status === "Closed" : t.status !== "Closed";
+          const matchesDept = aDept === "ALL" || t.suggested_team === aDept;
+          const matchesSearch = t.ticket_text.toLowerCase().includes(aQuery) ||
+            t.user_name.toLowerCase().includes(aQuery) ||
+            (t.employee_id || "").toLowerCase().includes(aQuery) ||
+            String(t.ticket_id).includes(aQuery);
+          return matchesTab && matchesDept && matchesSearch;
+        });
+
+        // Connected Multi-Criteria Sorting
+        adminFiltered.sort((a, b) => {
+          if (aSort === "priority") {
+            const diff = (PRIORITY_WEIGHT[a.priority] || 9) - (PRIORITY_WEIGHT[b.priority] || 9);
+            return diff !== 0 ? diff : b.ticket_id - a.ticket_id;
+          }
+          if (aSort === "review") {
+            const revA = a.human_review_required ? 0 : 1;
+            const revB = b.human_review_required ? 0 : 1;
+            return revA !== revB ? revA - revB : b.ticket_id - a.ticket_id;
+          }
+          if (aSort === "department") {
+            const deptDiff = a.suggested_team.localeCompare(b.suggested_team);
+            return deptDiff !== 0 ? deptDiff : b.ticket_id - a.ticket_id;
+          }
+          if (aSort === "oldest") {
+            return a.ticket_id - b.ticket_id;
+          }
+          // Default: recently raised (newest first)
+          return b.ticket_id - a.ticket_id;
+        });
+
+        document.getElementById("admin-tbody").innerHTML = adminFiltered.length === 0
+          ? `<tr><td colspan="8" class="py-6 text-center text-slate-500">No tickets match current filters.</td></tr>`
+          : adminFiltered.map(t => `
+            <tr class="hover:bg-slate-900/50 transition">
+              <td class="py-3.5 px-3 font-mono text-indigo-400 font-semibold">#T${1000 + t.ticket_id}</td>
+              <td class="py-3.5 px-3">
+                <p class="font-medium text-slate-200">${t.user_name}</p>
+                <p class="text-[10px] font-mono text-indigo-300">${t.employee_id}</p>
+              </td>
+              <td class="py-3.5 px-3 max-w-xs truncate text-slate-200">${t.ticket_text}</td>
+              <td class="py-3.5 px-3">
+                <span class="text-slate-200">${t.category}</span>
+                <span class="text-[10px] text-indigo-400 block">${(t.confidence * 100).toFixed(1)}% conf</span>
+              </td>
+              <td class="py-3.5 px-3 text-cyan-300 font-medium">${t.suggested_team}</td>
+              <td class="py-3.5 px-3">${adminStatusBadge(t.status)}</td>
+              <td class="py-3.5 px-3">${priorityBadge(t.priority)}</td>
+              <td class="py-3.5 px-3 text-right space-x-1.5 whitespace-nowrap">
+                <button onclick="inspectTicket(${t.ticket_id})" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">Inspect</button>
+                ${t.human_review_required ? `<button onclick="approveTicket(${t.ticket_id})" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold">Accept &amp; Route</button>` : ""}
+                ${t.status !== "Closed" ? `<button onclick="closeTicketAction(${t.ticket_id})" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-emerald-900/60 text-emerald-300">Mark Solved</button>` : ""}
+                <button onclick="deleteTicketAction(${t.ticket_id})" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-rose-950 text-rose-400">Delete</button>
+              </td>
+            </tr>
+          `).join("");
+      }
+    }
+
+    async function refreshAll() {
+      if (!sessionUser) return;
+      try {
+        if (sessionRole === "employee") {
+          const res = await fetch(`/tickets?employee_id=${encodeURIComponent(sessionUser.employee_id)}&limit=200`);
+          allTickets = await res.json();
+
+          const solvedCnt = allTickets.filter(t => t.status === "Closed").length;
+          const notSolvedCnt = allTickets.filter(t => t.status !== "Closed").length;
+
+          document.getElementById("badge-user-open").textContent = notSolvedCnt;
+          document.getElementById("u-stat-total").textContent = allTickets.length;
+          document.getElementById("u-stat-notsolved").textContent = notSolvedCnt;
+          document.getElementById("u-stat-solved").textContent = solvedCnt;
+
+          renderTables();
+        } else {
+          const [ticketsRes, monRes] = await Promise.all([
+            fetch("/tickets?limit=300"),
+            fetch("/monitoring")
+          ]);
+          allTickets = await ticketsRes.json();
+          metricsData = await monRes.json();
+
+          const openTickets = allTickets.filter(t => t.status !== "Closed");
+          const reviewTickets = allTickets.filter(t => t.human_review_required);
+
+          document.getElementById("badge-admin-review").textContent = reviewTickets.length;
+          document.getElementById("kpi-total").textContent = metricsData.total_predictions ?? 0;
+          document.getElementById("kpi-conf").textContent = `${((metricsData.avg_confidence ?? 0) * 100).toFixed(1)}%`;
+          document.getElementById("kpi-review").textContent = `${(metricsData.human_review_pct ?? 0).toFixed(1)}%`;
+          document.getElementById("kpi-latency").textContent = `${(metricsData.avg_latency_ms ?? 0).toFixed(2)} ms`;
+
+          document.getElementById("drift-text").textContent = metricsData.drift_details || "Monitoring active.";
+          document.getElementById("drift-dot").className = metricsData.drift_warning
+            ? "h-2.5 w-2.5 rounded-full bg-amber-400 animate-ping"
+            : "h-2.5 w-2.5 rounded-full bg-emerald-400";
+
+          document.getElementById("admin-review-preview").innerHTML = reviewTickets.length === 0
+            ? `<p class="text-slate-500">All tickets are currently Accepted &amp; Routed.</p>`
+            : reviewTickets.slice(0, 6).map(t => `
+              <div class="bg-slate-950/70 border border-amber-700/40 rounded-xl p-3.5 flex items-center justify-between gap-3">
+                <div>
+                  <span class="font-mono text-indigo-400 font-bold">#T${1000 + t.ticket_id}</span>
+                  <span class="font-mono text-slate-400 text-[11px] ml-1.5">(${t.employee_id})</span>
+                  <span class="text-slate-200 ml-2">${t.ticket_text}</span>
+                  <p class="text-[11px] text-amber-300/80 mt-0.5">Trigger: ${t.review_reason} → Target: ${t.suggested_team}</p>
+                </div>
+                <button onclick="approveTicket(${t.ticket_id})" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shrink-0">Accept &amp; Route</button>
+              </div>
+            `).join("");
+
+          document.getElementById("teams-grid").innerHTML = ALL_DEPARTMENTS.map(dept => {
+            const deptTickets = openTickets.filter(t => t.suggested_team === dept);
+            return `
+              <div class="glass rounded-2xl p-5 space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-sm font-semibold text-white">${dept}</h4>
+                  <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold">${deptTickets.length} Open</span>
+                </div>
+                <div class="space-y-1.5 text-xs text-slate-400 max-h-36 overflow-y-auto">
+                  ${deptTickets.length === 0 ? `<p class="text-slate-600 italic">Queue clear</p>` : deptTickets.map(t => `<p class="truncate text-slate-300">• #T${1000 + t.ticket_id} (${t.employee_id}): ${t.ticket_text}</p>`).join("")}
+                </div>
+              </div>
+            `;
+          }).join("");
+
+          renderTables();
+          renderAnalytics();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    checkHealth();
+  </script>
+</body>
+</html>

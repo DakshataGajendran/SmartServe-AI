@@ -1,0 +1,17 @@
+{
+  "model_name": "TF-IDF + Logistic Regression",
+  "model_version": "v1.0-logreg",
+  "accuracy": 0.8554,
+  "macro_f1": 0.8543,
+  "avg_latency_ms": 0.0013,
+  "classes": [
+    "Access",
+    "Administrative rights",
+    "HR Support",
+    "Hardware",
+    "Internal Project",
+    "Miscellaneous",
+    "Purchase",
+    "Storage"
+  ]
+}
